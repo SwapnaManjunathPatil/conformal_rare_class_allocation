@@ -1,0 +1,7 @@
+numpy
+scipy
+pandas
+scikit-learn
+matplotlib
+# only for real benchmark datasets (mammography, yeast_me2, ...):
+# imbalanced-learn

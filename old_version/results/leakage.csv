@@ -1,0 +1,17 @@
+model,lam,mode,rare_cov,cov_sd
+logistic,0,safe,0.893,0.13440610105199838
+logistic,0,synthetic_in_calibration,0.893,0.13440610105199838
+logistic,0,calibration_in_training,0.8664999999999999,0.18653350905400345
+logistic,0,calibration_as_seeds,0.893,0.13440610105199838
+logistic,300,safe,0.8915,0.13086156807863794
+logistic,300,synthetic_in_calibration,0.6435,0.04950505024742425
+logistic,300,calibration_in_training,0.887,0.13778606605894514
+logistic,300,calibration_as_seeds,0.851,0.2053752662810203
+forest,0,safe,0.8945,0.11807942242406169
+forest,0,synthetic_in_calibration,0.8945,0.11807942242406169
+forest,0,calibration_in_training,0.19799999999999998,0.07344385610791417
+forest,0,calibration_as_seeds,0.8945,0.11807942242406169
+forest,300,safe,0.9625,0.0649519052838329
+forest,300,synthetic_in_calibration,0.038,0.02412467616362964
+forest,300,calibration_in_training,0.44099999999999995,0.04968903299521939
+forest,300,calibration_as_seeds,0.6425,0.2023085514752157
