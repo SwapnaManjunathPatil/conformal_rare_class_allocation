@@ -77,23 +77,28 @@ def new_split(y, seed, m=None, n_test_rare=500, n_train_com=2000):
 
 # ------------------------------------------------------------------ models
 class Predictor:
-    def __init__(self, mod, X):
-        self.mod, self.X = mod, X
+    """P(rare) from a fitted model. jitter=True adds a tiny random amount (1e-6) to break tied scores."""
+    def __init__(self, mod, X, jitter=False):
+        self.mod, self.X, self.jitter = mod, X, jitter
+        self._rng = np.random.default_rng(12345)
+
+    def _noise(self, p):
+        return p + 1e-6 * self._rng.random(len(p)) if self.jitter else p
 
     def __call__(self, idx):                       # P(rare) for rows of X
-        return self.mod.predict_proba(self.X[idx])[:, 1]
+        return self._noise(self.mod.predict_proba(self.X[idx])[:, 1])
 
     def raw(self, Z):                              # P(rare) for new feature rows (e.g. synthetic)
-        return self.mod.predict_proba(Z)[:, 1]
+        return self._noise(self.mod.predict_proba(Z)[:, 1])
 
 
-def fit_predictor(X, train_com, train_rare, lam, rng, model="forest", seed_pts=None):
+def fit_predictor(X, train_com, train_rare, lam, rng, model="forest", seed_pts=None, jitter=False):
     """Train on common + real rare + lam synthetic points (SMOTE seeds default to train_rare)."""
     seeds = train_rare if seed_pts is None else seed_pts
     synth = smote(X[seeds], lam, rng) if lam else np.empty((0, X.shape[1]))
     Xtr = np.vstack([X[train_com], X[train_rare], synth])
     ytr = np.concatenate([np.zeros(len(train_com)), np.ones(len(train_rare) + len(synth))])
-    return Predictor(MODELS[model]().fit(Xtr, ytr), X), synth
+    return Predictor(MODELS[model]().fit(Xtr, ytr), X, jitter), synth
 
 
 def summarize(incl_rare, incl_com, nr):
@@ -105,11 +110,11 @@ def summarize(incl_rare, incl_com, nr):
 
 
 # ------------------------------------------------------------------ conformal runs
-def split_cp(X, sp, n_cal, lam, rng, model, alpha=ALPHA):
+def split_cp(X, sp, n_cal, lam, rng, model, alpha=ALPHA, jitter=False):
     """Leakage-safe dedicated split: first n_cal pool points calibrate, the rest train.
     Returns {'mondrian': (cov, size), 'marginal': (cov, size)}."""
     pool, nr = sp["pool"], len(sp["test_rare"])
-    pred, _ = fit_predictor(X, sp["train_com"], pool[n_cal:], lam, rng, model)
+    pred, _ = fit_predictor(X, sp["train_com"], pool[n_cal:], lam, rng, model, jitter=jitter)
     p = pred(sp["test"])
     s_r, s_c = 1 - pred(pool[:n_cal]), pred(sp["cal_com"])
     t_r, t_c = threshold(s_r, alpha), threshold(s_c, alpha)

@@ -133,9 +133,34 @@ def fig_real():                                       # real datasets
     save(fig, "fig6_real_datasets.png")
 
 
+def fig_real_regime(csv="real_regime.csv", out="fig7_real_regime_map.png"):   # real-data regime map
+    d = read(csv)
+    if d is None: return
+    sets, models = list(d.dataset.unique()), list(d.model.unique())
+    fig, axes = plt.subplots(len(sets), len(models), figsize=(5 * len(models), 3.7 * len(sets)),
+                             constrained_layout=True, squeeze=False)
+    for i, name in enumerate(sets):
+        for j, model in enumerate(models):
+            s = d[(d.dataset == name) & (d.model == model) & (d.lam > 0)]
+            piv = s.pivot(index="m", columns="lam", values="size_vs_lam0")
+            ci = s.pivot(index="m", columns="lam", values="ci95")
+            ax = axes[i, j]
+            im = ax.imshow(piv.values, cmap="RdBu_r", vmin=-0.2, vmax=0.2, aspect="auto")
+            ax.set_xticks(range(piv.shape[1])); ax.set_xticklabels(piv.columns)
+            ax.set_yticks(range(piv.shape[0])); ax.set_yticklabels(piv.index)
+            ax.set_xlabel("synthetic points (lambda)"); ax.set_ylabel("real rare points (m)")
+            ax.set_title(f"{name}, {model}")
+            for (a, b), v in np.ndenumerate(piv.values):
+                star = "*" if abs(v) > ci.values[a, b] else ""
+                ax.text(b, a, f"{v:+.2f}{star}", ha="center", va="center", fontsize=10)
+    fig.colorbar(im, ax=axes, label="change in set size vs no rebalancing (blue = smaller); * = 95% interval excludes 0")
+    save(fig, out)
+
+
 def run():
-    for f in (fig_min_size, fig_regime_map, fig_leakage, fig_rule, fig_small_m, fig_real):
+    for f in (fig_min_size, fig_regime_map, fig_leakage, fig_rule, fig_small_m, fig_real, fig_real_regime):
         f()
+    fig_real_regime("real_regime_jitter.csv", "fig8_real_regime_ties_broken.png")
 
 
 if __name__ == "__main__":
